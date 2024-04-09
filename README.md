@@ -1,2 +1,1 @@
-# propertymng
-prop
+This project aims to streamline the rental property market through an an online automation of agent services thus makes the information that’s required by both tenants and landlords available at any time anywhere
