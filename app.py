@@ -1,27 +1,15 @@
 #!/usr/bin/python3
 
-from flask import Flask, render_template, redirect, url_for, flash, request
-from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from flask import Flask, render_template, redirect, url_for, flash
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from requests import get
 import json
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, validators
-from wtforms.validators import DataRequired, EqualTo, Length
-from sqlalchemy.exc import SQLAlchemyError
-from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
-from wtforms.validators import DataRequired, Email, EqualTo
-from flask_login import login_user, logout_user, login_required
-
-class RegistrationForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired()])
-    email = StringField('Email', validators=[DataRequired(), Email()])
-    password = PasswordField('Password', validators=[DataRequired()])
-    confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
-    submit = SubmitField('Sign Up')
+from wtforms.validators import DataRequired, Email, EqualTo, Length
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -39,7 +27,7 @@ class LoginForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=4, max=25)])
     password = PasswordField('Password', validators=[DataRequired()])
 
-class RegisterForm(FlaskForm):
+class RegistrationForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=4, max=25)])
     password = PasswordField('Password', validators=[DataRequired(), EqualTo('confirm', message='Passwords must match'), Length(min=8)])
     confirm = PasswordField('Confirm Password', validators=[DataRequired()])
@@ -51,9 +39,10 @@ def load_user(user_id):
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not login_user():
+        if not current_user.is_authenticated:
             return redirect(url_for('login'))
         return f(*args, **kwargs)
+    return decorated_function
 
 @app.route('/')
 def index():
@@ -67,47 +56,46 @@ def login():
         if user and check_password_hash(user.password, form.password.data):
             login_user(user)
             flash('Logged in successfully.')
-            return redirect(url_for('properties'))
+            return redirect(url_for('tenant'))  # Redirect to tenant page after login
         else:
             flash('Invalid username or password.')
     return render_template('login.html', form=form)
 
-@app.route('/tenant', methods=['GET'])
+@app.route('/tenant')
 @login_required
 def tenant():
-    # Make API call to get property data
-    api = 'https://your_tenant_api_url'
-    response = get(api)
-    properties = json.loads(response.text)
-    return render_template('tenant.html', properties=properties)
+    # Make API call to get tenant property data
+    api_tenant = 'https://your_tenant_api_url'
+    response_tenant = get(api_tenant)
+    data_tenant = json.loads(response_tenant.text)
+    return render_template('tenant.html', properties=data_tenant)
 
-@app.route('/landlord', methods=['GET'])
+@app.route('/landlord')
 @login_required
 def landlord():
-    # Make API call to get property data
-    api = 'https://your_landlord_api_url'
-    response = get(api)
-    properties = json.loads(response.text)
-    return render_template('landlord.html', properties=properties)
+    # Make API call to get landlord property data
+    api_landlord = 'https://your_landlord_api_url'
+    response_landlord = get(api_landlord)
+    data_landlord = json.loads(response_landlord.text)
+    return render_template('landlord.html', properties=data_landlord)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    form = RegisterForm()
+    form = RegistrationForm()
     if form.validate_on_submit():
-        hashed_password = generate_password_hash(form.password.data, method='sha256')
-        new_user = User(username=form.username.data, password=hashed_password)
-        try:
-            db.session.add(new_user)
-            db.session.commit()
-            flash('User registered successfully.')
-            return redirect(url_for('login'))
-        except SQLAlchemyError as e:
-            flash('Error while registering user: {}'.format(str(e)))
+        new_user = User(username=form.username.data, password=generate_password_hash(form.password.data))
+        db.session.add(new_user)
+        db.session.commit()
+        flash('New user has been created.')
+        return redirect(url_for('login'))
     return render_template('register.html', form=form)
 
 @app.route('/logout')
+@login_required
 def logout():
     logout_user()
+    flash('You have been logged out.')
     return redirect(url_for('index'))
+
 if __name__ == '__main__':
-    app.run(host="0.0.0.0")
+    app.run(host='0.0.0.0')
