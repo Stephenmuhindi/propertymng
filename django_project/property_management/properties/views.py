@@ -1,6 +1,10 @@
 from django.shortcuts import render
 from .models import Landlord, Tenant, Property
 
+
+def landing_page(request):
+    return render(request, 'landingpage.html')
+
 def landlord_dashboard(request, landlord_id):
     landlord = Landlord.objects.get(id=landlord_id)
     properties = Property.objects.filter(landlord=landlord)
