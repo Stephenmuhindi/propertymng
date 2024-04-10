@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h1>Welcome, {{ tenant.first_name }} {{ tenant.last_name }}</h1>
+  <h2>Your Rent Information</h2>
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Rent Due</th>
+        <th>Due Date</th>
+        <th>Balance</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>{{ tenant.rent_due }}</td>
+        <td>{{ tenant.due_date|date:"Y-m-d" }}</td>
+        <td>{{ tenant.balance }}</td>
+      </tr>
+    </tbody>
+  </table>
+{% endblock %}
