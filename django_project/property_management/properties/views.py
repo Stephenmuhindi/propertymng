@@ -3,7 +3,7 @@ from .models import Landlord, Tenant, Property
 
 
 def landing_page(request):
-    return render(request, 'landingpage.html')
+    return render(request, 'landingpage.html', {'landingpage': landing_page})
 
 def landlord_dashboard(request, landlord_id):
     landlord = Landlord.objects.get(id=landlord_id)
